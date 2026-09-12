@@ -51,6 +51,6 @@ def main(argv=None):
     status = component.start()
 
     if should_serve:
-        component.server_component.serve(component.message)
+        component.server_component.serve(status["message"])
 
     return status

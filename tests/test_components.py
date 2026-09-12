@@ -35,9 +35,9 @@ class SocToolsComponentTests(unittest.TestCase):
         mock_component = Mock()
         mock_component.autostart_server = True
         mock_component.message = "SocTools ready"
-        mock_component.start.return_value = {
-            "message": "SocTools ready",
-            "display_preview": "SocTools ready",
+        mock_component.start.side_effect = lambda: {
+            "message": mock_component.message,
+            "display_preview": mock_component.message,
             "server_url": "http://127.0.0.1:8000",
         }
 
@@ -51,9 +51,9 @@ class SocToolsComponentTests(unittest.TestCase):
         mock_component = Mock()
         mock_component.autostart_server = True
         mock_component.message = "SocTools ready"
-        mock_component.start.return_value = {
-            "message": "SocTools ready",
-            "display_preview": "SocTools ready",
+        mock_component.start.side_effect = lambda: {
+            "message": mock_component.message,
+            "display_preview": mock_component.message,
             "server_url": "http://127.0.0.1:8000",
         }
 
@@ -67,9 +67,9 @@ class SocToolsComponentTests(unittest.TestCase):
         mock_component = Mock()
         mock_component.autostart_server = True
         mock_component.message = "SocTools ready"
-        mock_component.start.return_value = {
-            "message": "SocTools ready",
-            "display_preview": "SocTools ready",
+        mock_component.start.side_effect = lambda: {
+            "message": mock_component.message,
+            "display_preview": mock_component.message,
             "server_url": "http://127.0.0.1:8000",
         }
 
@@ -79,6 +79,21 @@ class SocToolsComponentTests(unittest.TestCase):
         self.assertEqual(mock_component.message, "Updated status")
         mock_component.start.assert_called_once_with()
         mock_component.server_component.serve.assert_called_once_with("Updated status")
+
+    def test_server_component_serve_uses_configured_host_port_and_message(self):
+        component = ServerComponent()
+        component.create_handler = Mock(return_value="handler")
+
+        with patch("soctools.serverComponent.HTTPServer") as mock_http_server:
+            server_instance = mock_http_server.return_value.__enter__.return_value
+
+            component.serve("Status ready")
+
+        component.create_handler.assert_called_once_with("Status ready")
+        mock_http_server.assert_called_once_with(
+            (component.host, component.port), "handler"
+        )
+        server_instance.serve_forever.assert_called_once_with()
 
 
 if __name__ == "__main__":
