@@ -1,2 +1,4 @@
 # This project currently uses only Python's standard library.
-
+adafruit-circuitpython-pcd8544 
+pillow 
+RPi
