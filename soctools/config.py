@@ -9,8 +9,10 @@ def load_component_config(file_name: str) -> ConfigParser:
     config_path = CONFIG_DIR / file_name
     parser = ConfigParser()
 
-    if not parser.read(config_path):
-        raise FileNotFoundError(f"Missing config file: {config_path}")
+    try:
+        with config_path.open(encoding="utf-8") as config_file:
+            parser.read_file(config_file)
+    except FileNotFoundError as error:
+        raise FileNotFoundError(f"Missing config file: {config_path}") from error
 
     return parser
-

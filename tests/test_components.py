@@ -47,6 +47,22 @@ class SocToolsComponentTests(unittest.TestCase):
         mock_component.start.assert_called_once_with()
         mock_component.server_component.serve.assert_called_once_with("SocTools ready")
 
+    def test_main_starts_server_when_enabled_by_config_only(self):
+        mock_component = Mock()
+        mock_component.autostart_server = True
+        mock_component.message = "SocTools ready"
+        mock_component.start.return_value = {
+            "message": "SocTools ready",
+            "display_preview": "SocTools ready",
+            "server_url": "http://127.0.0.1:8000",
+        }
+
+        with patch("soctools.mainComponent.MainComponent", return_value=mock_component):
+            main([])
+
+        mock_component.start.assert_called_once_with()
+        mock_component.server_component.serve.assert_called_once_with("SocTools ready")
+
 
 if __name__ == "__main__":
     unittest.main()
