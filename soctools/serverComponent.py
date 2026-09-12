@@ -32,11 +32,18 @@ class ServerComponent:
 
         class RequestHandler(BaseHTTPRequestHandler):
             def do_GET(self):
+                if self.path not in {"/", "/index.html"}:
+                    self.send_error(404, "Not Found")
+                    return
+
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Content-Length", str(len(page)))
                 self.end_headers()
                 self.wfile.write(page)
+
+            def do_POST(self):
+                self.send_error(405, "Method Not Allowed")
 
             def log_message(self, format, *args):
                 return
@@ -44,7 +51,11 @@ class ServerComponent:
         return RequestHandler
 
     def serve(self, message: str):
-        with HTTPServer((self.host, self.port), self.create_handler(message)) as httpd:
-            print(f"Serving SocTools UI at {self.build_url()}")
-            httpd.serve_forever()
-
+        try:
+            with HTTPServer((self.host, self.port), self.create_handler(message)) as httpd:
+                print(f"Serving SocTools UI at {self.build_url()}")
+                httpd.serve_forever()
+        except OSError as error:
+            raise RuntimeError(
+                f"Unable to start SocTools server at {self.build_url()}: {error}"
+            ) from error

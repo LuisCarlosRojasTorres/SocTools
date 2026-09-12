@@ -103,10 +103,24 @@ class SocToolsComponentTests(unittest.TestCase):
         )
         server_instance.serve_forever.assert_called_once_with()
 
+    def test_server_component_serve_wraps_bind_errors(self):
+        component = ServerComponent()
+        component.create_handler = Mock(return_value="handler")
+
+        with patch(
+            "soctools.serverComponent.HTTPServer",
+            side_effect=OSError("Address already in use"),
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError, "Unable to start SocTools server at http://127.0.0.1:8000"
+            ):
+                component.serve("Status ready")
+
     def test_server_component_handler_writes_expected_http_response(self):
         component = ServerComponent()
         handler_class = component.create_handler("Status ready")
         handler = handler_class.__new__(handler_class)
+        handler.path = "/"
         handler.send_response = Mock()
         handler.send_header = Mock()
         handler.end_headers = Mock()
@@ -120,6 +134,28 @@ class SocToolsComponentTests(unittest.TestCase):
         handler.send_header.assert_any_call("Content-Length", str(len(expected_body)))
         handler.end_headers.assert_called_once_with()
         self.assertEqual(handler.wfile.getvalue(), expected_body)
+
+    def test_server_component_handler_rejects_unknown_path(self):
+        component = ServerComponent()
+        handler_class = component.create_handler("Status ready")
+        handler = handler_class.__new__(handler_class)
+        handler.path = "/favicon.ico"
+        handler.send_error = Mock()
+
+        handler.do_GET()
+
+        handler.send_error.assert_called_once_with(404, "Not Found")
+
+    def test_server_component_handler_rejects_post_requests(self):
+        component = ServerComponent()
+        handler_class = component.create_handler("Status ready")
+        handler = handler_class.__new__(handler_class)
+        handler.path = "/"
+        handler.send_error = Mock()
+
+        handler.do_POST()
+
+        handler.send_error.assert_called_once_with(405, "Method Not Allowed")
 
 
 if __name__ == "__main__":
