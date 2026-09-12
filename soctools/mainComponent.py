@@ -28,9 +28,6 @@ class MainComponent:
         print(status["display_preview"])
         print(f"Server UI: {status['server_url']}")
 
-        if self.autostart_server:
-            self.server_component.serve(status["message"])
-
         return status
 
 
@@ -45,14 +42,14 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     component = MainComponent()
+    should_serve = args.serve or component.autostart_server
 
     if args.message:
         component.message = args.message
 
     status = component.start()
 
-    if args.serve and not component.autostart_server:
+    if should_serve:
         component.server_component.serve(status["message"])
 
     return status
-
