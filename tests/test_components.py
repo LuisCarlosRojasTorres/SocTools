@@ -1,8 +1,9 @@
+from io import BytesIO
 import unittest
 from unittest.mock import Mock, patch
 
 from soctools.displayComponent import DisplayComponent
-from soctools.mainComponent import MainComponent, main
+from soctools.mainComponent import MainComponent, run
 from soctools.serverComponent import ServerComponent
 
 
@@ -23,6 +24,13 @@ class SocToolsComponentTests(unittest.TestCase):
 
         self.assertLessEqual(len(rendered.splitlines()), component.rows)
 
+    def test_display_component_preserves_existing_line_breaks(self):
+        component = DisplayComponent()
+
+        rendered = component.render("Line one\nLine two")
+
+        self.assertEqual(rendered.splitlines()[:2], ["Line one      ", "Line two      "])
+
     def test_server_component_builds_html_page(self):
         component = ServerComponent()
 
@@ -42,7 +50,7 @@ class SocToolsComponentTests(unittest.TestCase):
         }
 
         with patch("soctools.mainComponent.MainComponent", return_value=mock_component):
-            main(["--serve"])
+            run(["--serve"])
 
         mock_component.start.assert_called_once_with()
         mock_component.server_component.serve.assert_called_once_with("SocTools ready")
@@ -58,7 +66,7 @@ class SocToolsComponentTests(unittest.TestCase):
         }
 
         with patch("soctools.mainComponent.MainComponent", return_value=mock_component):
-            main([])
+            run([])
 
         mock_component.start.assert_called_once_with()
         mock_component.server_component.serve.assert_called_once_with("SocTools ready")
@@ -74,7 +82,7 @@ class SocToolsComponentTests(unittest.TestCase):
         }
 
         with patch("soctools.mainComponent.MainComponent", return_value=mock_component):
-            main(["--message", "Updated status"])
+            run(["--message", "Updated status"])
 
         self.assertEqual(mock_component.message, "Updated status")
         mock_component.start.assert_called_once_with()
@@ -94,6 +102,24 @@ class SocToolsComponentTests(unittest.TestCase):
             (component.host, component.port), "handler"
         )
         server_instance.serve_forever.assert_called_once_with()
+
+    def test_server_component_handler_writes_expected_http_response(self):
+        component = ServerComponent()
+        handler_class = component.create_handler("Status ready")
+        handler = handler_class.__new__(handler_class)
+        handler.send_response = Mock()
+        handler.send_header = Mock()
+        handler.end_headers = Mock()
+        handler.wfile = BytesIO()
+
+        handler.do_GET()
+
+        expected_body = component.build_page("Status ready").encode("utf-8")
+        handler.send_response.assert_called_once_with(200)
+        handler.send_header.assert_any_call("Content-Type", "text/html; charset=utf-8")
+        handler.send_header.assert_any_call("Content-Length", str(len(expected_body)))
+        handler.end_headers.assert_called_once_with()
+        self.assertEqual(handler.wfile.getvalue(), expected_body)
 
 
 if __name__ == "__main__":

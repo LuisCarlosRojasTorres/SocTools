@@ -47,8 +47,13 @@ def main(argv=None):
         component.message = args.message
 
     should_serve = args.serve or component.autostart_server
-
     status = component.start()
+
+    return component, status, should_serve
+
+
+def run(argv=None):
+    component, status, should_serve = main(argv)
 
     if should_serve:
         component.server_component.serve(status["message"])

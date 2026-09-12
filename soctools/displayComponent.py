@@ -11,7 +11,10 @@ class DisplayComponent:
         self.rows = self.config.getint("display", "rows", fallback=6)
 
     def render(self, message: str) -> str:
-        wrapped_lines = wrap(message, self.columns) or [""]
+        wrapped_lines = []
+
+        for raw_line in message.splitlines() or [""]:
+            wrapped_lines.extend(wrap(raw_line, self.columns) or [""])
+
         visible_lines = wrapped_lines[: self.rows]
         return "\n".join(line.ljust(self.columns) for line in visible_lines)
-
