@@ -1,5 +1,6 @@
 from html import escape
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlsplit
 
 from .config import load_component_config
 
@@ -32,7 +33,9 @@ class ServerComponent:
 
         class RequestHandler(BaseHTTPRequestHandler):
             def do_GET(self):
-                if self.path not in {"/", "/index.html"}:
+                request_path = urlsplit(self.path).path
+
+                if request_path not in {"/", "/index.html"}:
                     self.send_error(404, "Not Found")
                     return
 
@@ -43,7 +46,9 @@ class ServerComponent:
                 self.wfile.write(page)
 
             def do_POST(self):
-                self.send_error(405, "Method Not Allowed")
+                self.send_response(405)
+                self.send_header("Allow", "GET")
+                self.end_headers()
 
             def log_message(self, format, *args):
                 return

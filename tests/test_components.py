@@ -135,6 +135,20 @@ class SocToolsComponentTests(unittest.TestCase):
         handler.end_headers.assert_called_once_with()
         self.assertEqual(handler.wfile.getvalue(), expected_body)
 
+    def test_server_component_handler_accepts_query_string_on_root_path(self):
+        component = ServerComponent()
+        handler_class = component.create_handler("Status ready")
+        handler = handler_class.__new__(handler_class)
+        handler.path = "/?view=compact"
+        handler.send_response = Mock()
+        handler.send_header = Mock()
+        handler.end_headers = Mock()
+        handler.wfile = BytesIO()
+
+        handler.do_GET()
+
+        handler.send_response.assert_called_once_with(200)
+
     def test_server_component_handler_rejects_unknown_path(self):
         component = ServerComponent()
         handler_class = component.create_handler("Status ready")
@@ -151,11 +165,15 @@ class SocToolsComponentTests(unittest.TestCase):
         handler_class = component.create_handler("Status ready")
         handler = handler_class.__new__(handler_class)
         handler.path = "/"
-        handler.send_error = Mock()
+        handler.send_response = Mock()
+        handler.send_header = Mock()
+        handler.end_headers = Mock()
 
         handler.do_POST()
 
-        handler.send_error.assert_called_once_with(405, "Method Not Allowed")
+        handler.send_response.assert_called_once_with(405)
+        handler.send_header.assert_called_once_with("Allow", "GET")
+        handler.end_headers.assert_called_once_with()
 
 
 if __name__ == "__main__":
