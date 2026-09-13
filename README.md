@@ -28,3 +28,10 @@ To start the localhost UI server:
 ```bash
 python -m soctools --serve
 ```
+
+## Dependencies
+Some packages shall be installed this way:
+
+```
+sudo apt-get install python3-rpi.gpio
+```
